@@ -16,6 +16,7 @@
       <div id="chartjs-tooltip-pie" class="chartjs-tooltip">
         <table></table>
       </div>
+      <div id="pieChart-legends" [innerHTML]="myPieChart.generateLegend()"></div>
     </div>
     <div class="col-6 border">
       <canvas id="chartDoughnut" width="700" height="400"></canvas>
@@ -35,11 +36,12 @@
     <div class="col-12 border">
       <div class="row">
         <div class="col-3 px-0" style="padding-top: 1.7rem;">
-          <h2 class="text-right font-bold">value</h2>
+          <h2 class="text-right font-bold">{{total}}</h2>
           <div class="text-right font-bold">unit</div>
         </div>
         <div class="col-9 px-0">
           <canvas id="chartBarHorizontalDemo" width="700" height="100"></canvas>
+          <div id="chart-legends" [innerHTML]="myHorizontalBarChart.generateLegend()"></div>
         </div>
       </div>
     </div>

@@ -13,6 +13,9 @@ export class AppComponent implements OnInit {
   ctx: any;
 
   myBarChart: any;
+  myPieChart: any;
+  myHorizontalBarChart: any;
+  total = 0;
 
   ngOnInit(): void {
     this.chartPie();
@@ -53,6 +56,7 @@ export class AppComponent implements OnInit {
           const y = mid_radius * Math.sin(mid_angle);
 
           ctx.fillStyle = '#fff';
+          ctx.fontSize = '20px';
           if (i == 3) { // Darker text color for lighter background
             ctx.fillStyle = '#444';
           }
@@ -93,7 +97,8 @@ export class AppComponent implements OnInit {
       if (tooltip.body) {
         const titleLines = tooltip.title || [];
         const bodyLines = tooltip.body.map(getBody);
-
+        console.log('c1: ', tooltip.dataPoints);
+        console.log('c2: ', this._chart.data.datasets);
         let innerHtml = '<thead>';
 
         titleLines.forEach(function(title) {
@@ -128,7 +133,7 @@ export class AppComponent implements OnInit {
       tooltipEl.style.padding = tooltip.yPadding + 'px ' + tooltip.xPadding + 'px';
     }
 
-    const myPieChart = new Chart(ctxM, {
+    this.myPieChart = new Chart(ctxM, {
       type: 'pie',
       data: {
         labels: ['มีหลักประกัน', 'ไม่มีหลักประกัน(บสย.)', 'หนี้ประชารัฐ'],
@@ -165,12 +170,31 @@ export class AppComponent implements OnInit {
           // animationDuration: 500
           animationDuration: 0
         },
+        scales: {
+          gridLines: {
+          },
+        },
         animation: {
           duration: 500,
           easing: 'easeOutQuart',
           // onProgress: drawPercent,
           onComplete: drawPercent
-        }
+        },
+        legendCallback: function(chart) {
+          // console.log('chart', chart);
+          let text = [];
+          text.push('<div class="row"">');
+          for (let i = 0; i < chart.data.labels.length; i++) {
+            const bgClass = chart.data.datasets[0].backgroundColor;
+            // console.log(chart.data.datasets[i]); // see what's inside the obj.
+            text.push('<div class="col-3">');
+            text.push('<span class="legend-box">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>');
+            text.push('<span>' + chart.data.labels[i] + '</span>');
+            text.push('</div>');
+          }
+          text.push('</div>');
+          return text.join('');
+        },
       }
     });
   }
@@ -253,7 +277,8 @@ export class AppComponent implements OnInit {
         }]
       },
       legend: {
-        display: true
+        display: true,
+        onClick: null
       },
       animation: {
         onComplete: function() {
@@ -398,7 +423,17 @@ export class AppComponent implements OnInit {
   }
 
   private chartHorizontalBarDemo() {
+    const addFn = (val) => {
+      console.log('+', val);
+      this.total = this.total + val;
+    };
+    const negFn = (val) => {
+      console.log('-', val);
+      this.total = this.total - val;
+    };
+
     const barOptions_stacked: ChartOptions = {
+      // maintainAspectRatio: false,
       responsive: true,
       legend: {
         position: 'bottom',
@@ -411,7 +446,13 @@ export class AppComponent implements OnInit {
           // See controller.isDatasetVisible comment
           meta.hidden = meta.hidden === null ? !ci.data.datasets[index].hidden : null;
 
-          console.log(meta);
+          for (const val of ci.data.datasets[index].data) {
+            if (meta.hidden) {
+              negFn(val);
+            } else {
+              addFn(val);
+            }
+          }
 
           // We hid a dataset ... rerender the chart
           ci.update();
@@ -435,53 +476,27 @@ export class AppComponent implements OnInit {
       hover: {
         animationDuration: 0
       },
+      // scale: false,
       scales: {
-        /*xAxes: [{
-          stacked: true,
-          ticks: {
-            display: false,
-            beginAtZero: true,
-            fontFamily: '\'Open Sans Bold\', sans-serif',
-            fontSize: 11,
-          },
-          gridLines: {
-            drawBorder: false,
-            display: false,
-          },
-        }],
-        yAxes: [{
-          stacked: true,
-          ticks: {
-            display: false,
-            fontFamily: '\'Open Sans Bold\', sans-serif',
-            fontSize: 11
-          },
-          gridLines: {
-            drawBorder: false,
-            display: false,
-            color: '#fff',
-            zeroLineColor: '#fff',
-            zeroLineWidth: 0
-          },
-          afterFit(scale?: any): void {
-            scale.height = scale.height + 20;
-          }
-        }]*/
         xAxes: [{
+          // categoryPercentage: 1,
+          barPercentage: 0.1,
+          // barThickness: 6,
+          // maxBarThickness: 10,
           stacked: true,
           // ticks: {
           //   display: false,
           // },
-          // gridLines: {
-          //   drawBorder: false,
-          //   display: false,
-          // },
+          gridLines: {
+            //   drawBorder: false,
+            display: false,
+          },
         }],
         yAxes: [{
           stacked: true,
-          // ticks: {
-          //   display: false,
-          // },
+          ticks: {
+            // display: false,
+          },
           // gridLines: {
           //   drawBorder: false,
           //   display: false,
@@ -512,81 +527,96 @@ export class AppComponent implements OnInit {
           }), this);
         }*/
       },
+      events: ['mousemove', 'mouseout', 'click', 'touchstart', 'touchmove'],
+      legendCallback: function(chart) {
+        // console.log('chart', chart);
+        let text = [];
+        text.push('<div class="row" (click)="alert()">');
+        for (let i = 0; i < chart.data.datasets.length; i++) {
+          // console.log(chart.data.datasets[i]); // see what's inside the obj.
+          text.push('<div class="col-3">');
+          text.push('<span class="legend-box color-' + i + '">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>');
+          text.push('<span>' + chart.data.datasets[i].label + '</span>');
+          text.push('</div>');
+        }
+        text.push('</div>');
+        return text.join('');
+      },
     };
 
-    const canvas: any = document.getElementById('chartBarHorizontalDemo');
-    const ctx: any = canvas.getContext('2d');
-    const myHorizontalBarChart = new Chart(ctx, {
+    const chartConfig = {
       type: 'horizontalBar',
       data: {
         labels: ['2014'],
         datasets: [
           {
             label: 'label 1',
-            data: [1],
+            data: [19],
             // data: [727, 1000],
             backgroundColor: 'rgba(63,103,126,1)',
             hoverBackgroundColor: 'rgba(50,90,100,1)'
           }, {
             label: 'label 2',
-            data: [1],
+            data: [15],
             // data: [238, 1000],
             backgroundColor: 'rgba(163,103,126,1)',
             hoverBackgroundColor: 'rgba(140,85,100,1)'
           }, {
             label: 'label 3',
-            data: [1],
+            data: [14],
             // data: [1238, 1000],
             backgroundColor: 'rgba(63,203,226,1)',
             hoverBackgroundColor: 'rgba(46,185,235,1)'
-          }, {
-            label: 'label 4',
-            data: [1],
-            // data: [1238, 1000],
-            backgroundColor: 'rgba(63,103,126,1)',
-            hoverBackgroundColor: 'rgba(50,90,100,1)'
-          }, {
-            label: 'label 5',
-            data: [1],
-            // data: [1238, 1000],
-            backgroundColor: 'rgba(163,103,126,1)',
-            hoverBackgroundColor: 'rgba(140,85,100,1)'
-          }, {
-            label: 'label 6',
-            data: [1],
-            // data: [1238, 1000],
-            backgroundColor: 'rgba(63,203,226,1)',
-            hoverBackgroundColor: 'rgba(46,185,235,1)'
-          }, {
-            label: 'label 7',
-            data: [1],
-            // data: [1238, 1000],
-            backgroundColor: 'rgba(63,103,126,1)',
-            hoverBackgroundColor: 'rgba(50,90,100,1)'
-          }, {
-            label: 'label 8',
-            data: [1],
-            // data: [1238, 1000],
-            backgroundColor: 'rgba(163,103,126,1)',
-            hoverBackgroundColor: 'rgba(140,85,100,1)'
-          }, {
-            label: 'label 9',
-            data: [1],
-            // data: [1238, 1000],
-            backgroundColor: 'rgba(63,203,226,1)',
-            hoverBackgroundColor: 'rgba(46,185,235,1)'
-          }, {
-            label: 'label 10',
-            data: [1],
-            // data: [727, 1000],
-            backgroundColor: 'rgba(63,103,126,1)',
-            hoverBackgroundColor: 'rgba(50,90,100,1)'
+            }, {
+              label: 'label 4',
+              data: [13],
+              backgroundColor: 'rgba(63,103,126,1)',
+              hoverBackgroundColor: 'rgba(50,90,100,1)'
+            }, {
+              label: 'label 5',
+              data: [14],
+              backgroundColor: 'rgba(163,103,126,1)',
+              hoverBackgroundColor: 'rgba(140,85,100,1)'
+            }, {
+              label: 'label 6',
+              data: [19],
+              backgroundColor: 'rgba(63,203,226,1)',
+              hoverBackgroundColor: 'rgba(46,185,235,1)'
+            }, {
+              label: 'label 7',
+              data: [1],
+              backgroundColor: 'rgba(63,103,126,1)',
+              hoverBackgroundColor: 'rgba(50,90,100,1)'
+            }, {
+              label: 'label 8',
+              data: [9],
+              backgroundColor: 'rgba(163,103,126,1)',
+              hoverBackgroundColor: 'rgba(140,85,100,1)'
+            }, {
+              label: 'label 9',
+              data: [11],
+              backgroundColor: 'rgba(63,203,226,1)',
+              hoverBackgroundColor: 'rgba(46,185,235,1)'
+            }, {
+              label: 'label 10',
+              data: [12],
+              backgroundColor: 'rgba(63,103,126,1)',
+              hoverBackgroundColor: 'rgba(50,90,100,1)'
           }
         ]
       },
 
       options: barOptions_stacked,
-    });
+    };
+
+    // sum total
+    this.total = chartConfig.data.datasets.reduce((previousValue, item) => {
+      return previousValue = previousValue + item.data[0];
+    }, 0);
+
+    const canvas: any = document.getElementById('chartBarHorizontalDemo');
+    const ctx: any = canvas.getContext('2d');
+    this.myHorizontalBarChart = new Chart(ctx, chartConfig);
   }
 
 }
